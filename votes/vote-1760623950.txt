@@ -1,0 +1,7 @@
+QUESTION: Should we add a daily automated standup summary that posts to a web dashboard?
+OPTIONS: yes,no,weekly-instead
+PROPOSED_BY: max
+PROPOSED_AT: Thu Oct 16 07:12:30 PDT 2025
+STATUS: open
+
+--- VOTES ---

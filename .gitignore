@@ -1,0 +1,46 @@
+# Logs
+*.log
+poller-*.log
+cloud-poller-*.log
+audio-bridge.log
+messenger.log
+
+# Node modules
+node_modules/
+package-lock.json
+
+# Session data (local only)
+sessions/
+inbox-*.json
+
+# Machine-specific files
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Git hooks (already in git-hooks/)
+.git/hooks/*
+
+# SSH keys and secrets
+*.pem
+*.key
+id_rsa*
+known_hosts
+
+# Environment variables
+.env
+.env.local
+
+# Cloudflare wrangler
+.wrangler/
+wrangler.toml.local
+
+# Test artifacts
+test-results/
+coverage/

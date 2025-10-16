@@ -1,0 +1,13 @@
+name = "pinky-brain-hub"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# D1 Database for message storage
+[[d1_databases]]
+binding = "DB"
+database_name = "pinky-brain-messages"
+database_id = "8853b3dd-2813-49c9-83a3-7286d5cd3834"
+
+# Environment variables
+[vars]
+API_KEY = "3836d657a7f6bc184e3810e50979d5afecde22e404c7edd7c5cea5b3e50c5cd5"

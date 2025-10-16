@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Multi-Agent Task Message",
+  "description": "Message format for automated task coordination between Claude Code agents",
+  "type": "object",
+  "required": ["from", "to", "type", "body"],
+  "properties": {
+    "from": {
+      "type": "string",
+      "description": "Agent name sending the message",
+      "examples": ["maxyolo-claude", "pinky-claude", "orchestrator"]
+    },
+    "to": {
+      "type": "string",
+      "description": "Target agent name",
+      "examples": ["maxyolo-claude", "pinky-claude", "any"]
+    },
+    "type": {
+      "type": "string",
+      "description": "Message type for routing and handling",
+      "enum": ["task", "completion", "error", "status", "command"],
+      "examples": ["task", "completion"]
+    },
+    "subject": {
+      "type": "string",
+      "description": "Human-readable subject line"
+    },
+    "body": {
+      "type": "string",
+      "description": "Task prompt or message content"
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["low", "normal", "high", "critical"],
+      "default": "normal",
+      "description": "Task priority for queue ordering"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "description": "Unique task identifier"
+        },
+        "session_id": {
+          "type": "string",
+          "description": "Claude Code session ID"
+        },
+        "depends_on": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of task IDs that must complete first"
+        },
+        "timeout": {
+          "type": "integer",
+          "description": "Max execution time in seconds"
+        },
+        "auto_execute": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to auto-start Claude session for this task"
+        },
+        "reply_to": {
+          "type": "string",
+          "description": "Where to send completion message"
+        },
+        "started_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "from": "maxyolo-claude",
+      "to": "pinky-claude",
+      "type": "task",
+      "subject": "Run Tests",
+      "body": "Run npm test and report results",
+      "priority": "high",
+      "metadata": {
+        "task_id": "test-20251015-001",
+        "auto_execute": true,
+        "reply_to": "maxyolo-claude",
+        "timeout": 300
+      }
+    },
+    {
+      "from": "pinky-claude",
+      "to": "maxyolo-claude",
+      "type": "completion",
+      "subject": "Tests Complete",
+      "body": "All tests passed: 47/47",
+      "metadata": {
+        "task_id": "test-20251015-001",
+        "completed_at": "2025-10-15T18:45:00.000Z"
+      }
+    }
+  ]
+}

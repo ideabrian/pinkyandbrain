@@ -1,0 +1,9 @@
+QUESTION: Should we create a shared GitHub repository for cluster scripts, training, and docs?
+OPTIONS: yes,no,maybe-later
+PROPOSED_BY: pinky
+PROPOSED_AT: Thu Oct 16 07:07:27 PDT 2025
+STATUS: open
+
+--- VOTES ---
+pinky: yes (2025-10-16 07:07)
+max: yes (2025-10-16 07:12)

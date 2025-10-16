@@ -1,0 +1,37 @@
+{
+  "name": "build-frontend",
+  "description": "Build React/Vue/Angular frontend",
+  "template": {
+    "from": "{{from}}",
+    "to": "{{to}}",
+    "type": "task",
+    "subject": "Build Frontend",
+    "body": "Build the frontend application using {{build_command}}. Check for TypeScript errors, linting issues, and bundle size. Report build time and any warnings. Deploy to {{deploy_target}} if build succeeds.",
+    "priority": "high",
+    "metadata": {
+      "task_id": "build-frontend-{{timestamp}}",
+      "template": "build-frontend",
+      "auto_execute": false,
+      "timeout": 600,
+      "depends_on": []
+    }
+  },
+  "variables": {
+    "from": {
+      "description": "Agent sending the task",
+      "default": "orchestrator"
+    },
+    "to": {
+      "description": "Agent to build frontend",
+      "default": "maxyolo-claude"
+    },
+    "build_command": {
+      "description": "Build command to run",
+      "default": "npm run build"
+    },
+    "deploy_target": {
+      "description": "Where to deploy",
+      "default": "staging"
+    }
+  }
+}

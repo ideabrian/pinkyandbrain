@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pinky & Brain - Live Timeline</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    /** ---------- Types & Config ---------- */
+    const API_URL = 'https://pinky-brain-hub.b-9f2.workers.dev/timeline';
+    const REFRESH_INTERVAL = 3000; // 3 seconds
+
+    const MACHINE_EMOJIS = {
+      'brain': '🧠',
+      'pinky': '💖',
+      'maxyolo': '🎮',
+      'ios-shortcut': '📱'
+    };
+
+    const EVENT_TYPE_MAP = {
+      'workflow_start': { icon: '🚀', label: 'Workflow' },
+      'planning': { icon: '📝', label: 'Planning' },
+      'executing': { icon: '🔨', label: 'Executing' },
+      'completed': { icon: '✅', label: 'Complete' },
+      'knowledge_shared': { icon: '💡', label: 'Knowledge' },
+      'knowledge_searched': { icon: '🔍', label: 'Search' },
+      'message_sent': { icon: '📨', label: 'Message' },
+      'task': { icon: '📋', label: 'Task' },
+      'error': { icon: '⚠️', label: 'Error' }
+    };
+
+    /** ---------- Inline Icons ---------- */
+    const IconWorkflow = () => (
+      <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 3l9 16H3L12 3z" fill="currentColor" opacity=".2"/>
+        <path d="M12 8v5m0 3h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      </svg>
+    );
+
+    const ComputerEmoji = ({ name }) => {
+      const emoji = MACHINE_EMOJIS[name] || '🖥️';
+
+      return (
+        <span className={`comp-emoji comp-${name}`} title={name} aria-label={`Computer ${name}`}>
+          {emoji}
+        </span>
+      );
+    };
+
+    /** ---------- Main Component ---------- */
+    const AgentTimeline = ({ events, speedPxPerSec = 60, pauseOnHover = true }) => {
+      const containerRef = useRef(null);
+      const rowRef = useRef(null);
+      const [duration, setDuration] = useState(30);
+
+      // Group events by timestamp (to nearest second)
+      const groupedEvents = useMemo(() => {
+        const groups = new Map();
+        events.forEach(ev => {
+          const date = new Date(ev.timestamp);
+          const timeKey = date.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+          });
+
+          if (!groups.has(timeKey)) {
+            groups.set(timeKey, []);
+          }
+          groups.get(timeKey).push(ev);
+        });
+        return Array.from(groups.entries()).map(([ts, evs]) => ({ ts, events: evs }));
+      }, [events]);
+
+      // Duplicate for seamless loop
+      const doubled = useMemo(() => [...groupedEvents, ...groupedEvents], [groupedEvents]);
+
+      useEffect(() => {
+        const row = rowRef.current;
+        if (!row) return;
+        const width = row.scrollWidth / 2;
+        const secs = Math.max(15, Math.round(width / Math.max(10, speedPxPerSec)));
+        setDuration(secs);
+      }, [groupedEvents, speedPxPerSec]);
+
+      if (events.length === 0) {
+        return (
+          <div className="agent-timeline">
+            <div className="empty-state">
+              <div className="empty-icon">📭</div>
+              <div className="empty-text">No events yet. Start a workflow!</div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="agent-timeline" ref={containerRef} data-pause={pauseOnHover ? "hover" : "never"}>
+          <div
+            className="track"
+            style={{ animationDuration: `${duration}s` }}
+            aria-live="polite"
+            aria-label="Agent event timeline scrolling right to left"
+          >
+            <div className="row" ref={rowRef}>
+              {doubled.map((group, i) => (
+                <TimeSlice group={group} key={`${group.ts}-${i}`} />
+              ))}
+            </div>
+          </div>
+
+          <div className="legend" aria-hidden="true">
+            <span className="legend-item">
+              🧠 BRAIN
+            </span>
+            <span className="legend-item">
+              💖 PINKY
+            </span>
+            <span className="legend-item">
+              🎮 MAXYOLO
+            </span>
+            <span className="legend-item">
+              📱 iPhone
+            </span>
+          </div>
+        </div>
+      );
+    };
+
+    /** Time slice showing all events at a single timestamp */
+    const TimeSlice = ({ group }) => {
+      const { ts, events } = group;
+      const hasMultiple = events.length > 1;
+
+      return (
+        <div className={`time-slice ${hasMultiple ? 'stacked' : ''}`}>
+          <div className="timestamp">{ts}</div>
+          <div className="events-stack">
+            {events.map((ev, idx) => (
+              <EventCard ev={ev} stackIndex={idx} key={ev.id} />
+            ))}
+          </div>
+        </div>
+      );
+    };
+
+    /** Individual event card */
+    const EventCard = ({ ev, stackIndex }) => {
+      const { event_type, machine, title, description } = ev;
+      const eventConfig = EVENT_TYPE_MAP[event_type] || { icon: '📌', label: event_type };
+
+      return (
+        <div
+          className={`event-card event-${event_type}`}
+          style={{ '--stack-index': stackIndex }}
+          role="group"
+          aria-label={`${event_type} on ${machine}`}
+        >
+          <div className="card-header">
+            <ComputerEmoji name={machine} />
+            <span className="event-icon" title={eventConfig.label}>
+              {eventConfig.icon}
+            </span>
+          </div>
+          <div className="card-title">{title}</div>
+          {description && <div className="card-description">{description}</div>}
+        </div>
+      );
+    };
+
+    /** ---------- Demo with Live Data ---------- */
+    const LiveTimeline = () => {
+      const [events, setEvents] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [error, setError] = useState(null);
+      const [eventCount, setEventCount] = useState(0);
+      const bufferRef = useRef([]);
+
+      const BUFFER_INTERVAL = 30000; // 30 seconds - smooth updates
+
+      const fetchEvents = async () => {
+        try {
+          const response = await fetch(API_URL);
+          const data = await response.json();
+
+          if (data.events) {
+            bufferRef.current = data.events;
+            setEventCount(data.total);
+            setLoading(false);
+          }
+        } catch (err) {
+          setError(err.message);
+          setLoading(false);
+        }
+      };
+
+      // Fetch new events every 5 seconds (but don't render yet)
+      useEffect(() => {
+        fetchEvents();
+        const fetchInterval = setInterval(fetchEvents, 5000);
+        return () => clearInterval(fetchInterval);
+      }, []);
+
+      // Flush buffer to timeline every 30 seconds
+      useEffect(() => {
+        const flushInterval = setInterval(() => {
+          setEvents(bufferRef.current);
+        }, BUFFER_INTERVAL);
+        return () => clearInterval(flushInterval);
+      }, []);
+
+      return (
+        <div style={{ padding: 24, background: '#000', minHeight: '100vh' }}>
+          <div style={{ maxWidth: 1400, margin: '0 auto' }}>
+            <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h1 style={{ color: '#e8ecf2', fontSize: '2.5em', margin: 0 }}>
+                🧠 Pinky & Brain Live
+              </h1>
+              <div style={{ display: 'flex', gap: 20 }}>
+                <div style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  padding: '10px 20px',
+                  borderRadius: 8,
+                  color: '#9aa4b2'
+                }}>
+                  <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#60a5fa' }}>
+                    {eventCount}
+                  </div>
+                  <div style={{ fontSize: '0.85em' }}>Events</div>
+                </div>
+                <div style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  padding: '10px 20px',
+                  borderRadius: 8,
+                  color: '#9aa4b2'
+                }}>
+                  <div style={{ fontSize: '1.8em', fontWeight: 'bold', color: '#34d399' }}>
+                    ●
+                  </div>
+                  <div style={{ fontSize: '0.85em' }}>Live</div>
+                </div>
+              </div>
+            </div>
+
+            {loading ? (
+              <div style={{ color: '#9aa4b2', textAlign: 'center', padding: 60 }}>
+                Loading timeline...
+              </div>
+            ) : error ? (
+              <div style={{ color: '#f87171', textAlign: 'center', padding: 60 }}>
+                Error: {error}
+              </div>
+            ) : (
+              <AgentTimeline events={events} speedPxPerSec={60} />
+            )}
+
+            <div style={{
+              marginTop: 30,
+              padding: 20,
+              background: 'rgba(255,255,255,0.03)',
+              borderRadius: 10,
+              color: '#9aa4b2',
+              fontSize: '0.9em'
+            }}>
+              <strong style={{ color: '#e8ecf2' }}>Smooth Updates:</strong> New events are buffered and added every 30 seconds for smooth scrolling.
+              Hover to pause. Events are grouped by timestamp.
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    // Render
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<LiveTimeline />);
+  </script>
+
+  <style>
+.agent-timeline {
+  --bg: #0b0d12;
+  --ink: #e8ecf2;
+  --muted: #9aa4b2;
+
+  --workflow: #60a5fa;
+  --planning: #a78bfa;
+  --executing: #f59e0b;
+  --completed: #34d399;
+  --knowledge: #fbbf24;
+  --search: #60a5fa;
+  --message: #818cf8;
+  --task: #34d399;
+  --error: #f87171;
+
+  --brain: #a78bfa;
+  --pinky: #f472b6;
+  --maxyolo: #34d399;
+  --ios-shortcut: #f59e0b;
+
+  --card-bg: rgba(255,255,255,0.04);
+  --card-border: rgba(255,255,255,0.1);
+
+  position: relative;
+  background: var(--bg);
+  color: var(--ink);
+  border-radius: 14px;
+  padding: 20px 16px 16px;
+  overflow: hidden;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 200px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-icon {
+  font-size: 4em;
+  margin-bottom: 16px;
+}
+
+.empty-text {
+  color: var(--muted);
+  font-size: 1.2em;
+}
+
+.track {
+  white-space: nowrap;
+  will-change: transform;
+  user-select: none;
+  pointer-events: auto;
+  display: block;
+  animation-name: marquee;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.agent-timeline[data-pause="hover"] .track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.row {
+  display: inline-flex;
+  gap: 20px;
+  padding-right: 40px;
+  align-items: flex-start;
+}
+
+.time-slice {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.timestamp {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  padding: 3px 10px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.events-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.event-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  min-width: 220px;
+  max-width: 300px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+
+.event-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.time-slice.stacked .event-card {
+  animation: stackPop 0.3s ease calc(var(--stack-index) * 0.1s) backwards;
+}
+
+@keyframes stackPop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.event-workflow_start { border-left: 3px solid var(--workflow); }
+.event-planning { border-left: 3px solid var(--planning); }
+.event-executing { border-left: 3px solid var(--executing); }
+.event-completed { border-left: 3px solid var(--completed); }
+.event-knowledge_shared { border-left: 3px solid var(--knowledge); }
+.event-knowledge_searched { border-left: 3px solid var(--search); }
+.event-message_sent { border-left: 3px solid var(--message); }
+.event-task { border-left: 3px solid var(--task); }
+.event-error { border-left: 3px solid var(--error); }
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.comp-emoji {
+  font-size: 20px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+.comp-brain { filter: drop-shadow(0 0 10px rgba(167, 139, 250, 0.5)); }
+.comp-pinky { filter: drop-shadow(0 0 10px rgba(244, 114, 182, 0.5)); }
+.comp-maxyolo { filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.5)); }
+.comp-ios-shortcut { filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.5)); }
+
+.event-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-left: auto;
+  font-size: 16px;
+}
+
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.card-description {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  align-items: center;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track { animation: none !important; }
+  .event-card { animation: none !important; }
+}
+
+@media (max-width: 768px) {
+  .event-card {
+    min-width: 180px;
+    max-width: 250px;
+  }
+
+  .row {
+    gap: 14px;
+  }
+}
+  </style>
+</body>
+</html>
