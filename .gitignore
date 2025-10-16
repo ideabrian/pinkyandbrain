@@ -1,0 +1,41 @@
+# Logs
+*.log
+*.out
+
+# Temporary files
+/tmp/
+*.tmp
+
+# Process files
+*.pid
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# IDE
+.vscode/
+.idea/
+
+# Node
+node_modules/
+
+# Credentials
+*credentials*
+*secret*
+*.key
+*.pem
+
+# Progress/state files
+.pinky-brain-training
+poller-*.log
+cloud-poller-*.log
+messenger.log
+audio-bridge.log
+inbox-*.json
+
+# Playwright MCP cache
+.playwright-mcp/

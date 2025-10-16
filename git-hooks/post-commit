@@ -1,0 +1,113 @@
+#!/bin/bash
+
+# post-commit - Auto-trigger tasks after commit
+# Install: cp post-commit .git/hooks/ && chmod +x .git/hooks/post-commit
+
+# Get commit info
+COMMIT_HASH=$(git rev-parse --short HEAD)
+COMMIT_MSG=$(git log -1 --pretty=%B)
+AUTHOR=$(git log -1 --pretty=%an)
+FILES_CHANGED=$(git diff-tree --no-commit-id --name-only -r HEAD | wc -l | tr -d ' ')
+
+echo "╔════════════════════════════════════════════════════════════╗"
+echo "║  Git Hook: Post-Commit                                     ║"
+echo "╚════════════════════════════════════════════════════════════╝"
+echo ""
+echo "Commit: $COMMIT_HASH"
+echo "Author: $AUTHOR"
+echo "Files: $FILES_CHANGED"
+echo "Message: ${COMMIT_MSG:0:50}..."
+echo ""
+
+# Check if this is in pinkyandbrain project
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+if [[ ! "$PROJECT_ROOT" == *"pinkyandbrain"* ]]; then
+    # Not our project, check if message bus exists
+    if ! curl -s http://localhost:3100/health > /dev/null 2>&1; then
+        echo "Message bus not available, skipping auto-tasks"
+        exit 0
+    fi
+fi
+
+# Parse commit message for task triggers
+# Format: [trigger:agent] message
+# Example: [test:pinky] Add new feature
+if [[ "$COMMIT_MSG" =~ \[([^:]+):([^\]]+)\] ]]; then
+    TRIGGER="${BASH_REMATCH[1]}"
+    AGENT="${BASH_REMATCH[2]}-claude"
+
+    echo "🎯 Detected trigger: $TRIGGER for $AGENT"
+
+    case $TRIGGER in
+        test)
+            TASK_BODY="New commit $COMMIT_HASH. Run test suite and report results."
+            ;;
+        build)
+            TASK_BODY="New commit $COMMIT_HASH. Build the project and check for errors."
+            ;;
+        deploy)
+            TASK_BODY="New commit $COMMIT_HASH. Deploy to staging environment."
+            ;;
+        review)
+            TASK_BODY="New commit $COMMIT_HASH. Review changes and provide feedback."
+            ;;
+        *)
+            TASK_BODY="New commit $COMMIT_HASH: $COMMIT_MSG"
+            ;;
+    esac
+
+    # Determine target bus
+    if [[ "$AGENT" == "pinky-claude" ]]; then
+        BUS="http://192.168.5.80:3100"
+    else
+        BUS="http://localhost:3100"
+    fi
+
+    # Send task
+    echo "📤 Sending task to $AGENT..."
+
+    curl -s -X POST "$BUS/send" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"from\": \"git-hook\",
+            \"to\": \"$AGENT\",
+            \"type\": \"task\",
+            \"subject\": \"Post-Commit: $TRIGGER\",
+            \"body\": \"$TASK_BODY\",
+            \"priority\": \"normal\",
+            \"metadata\": {
+                \"task_id\": \"git-$COMMIT_HASH\",
+                \"commit_hash\": \"$COMMIT_HASH\",
+                \"trigger\": \"post-commit\",
+                \"author\": \"$AUTHOR\"
+            }
+        }" > /dev/null 2>&1
+
+    echo "✅ Task sent to $AGENT"
+else
+    # Auto-trigger tests on certain file patterns
+    if git diff-tree --no-commit-id --name-only -r HEAD | grep -E '\.(ts|tsx|js|jsx)$' > /dev/null; then
+        echo "🔍 Code changes detected, sending test task to pinky..."
+
+        curl -s -X POST "http://192.168.5.80:3100/send" \
+            -H "Content-Type: application/json" \
+            -d "{
+                \"from\": \"git-hook\",
+                \"to\": \"pinky-claude\",
+                \"type\": \"task\",
+                \"subject\": \"Auto-Test\",
+                \"body\": \"Code changed in commit $COMMIT_HASH. Run relevant tests.\",
+                \"priority\": \"low\",
+                \"metadata\": {
+                    \"task_id\": \"auto-test-$COMMIT_HASH\",
+                    \"commit_hash\": \"$COMMIT_HASH\",
+                    \"trigger\": \"auto\",
+                    \"files_changed\": $FILES_CHANGED
+                }
+            }" > /dev/null 2>&1
+
+        echo "✅ Auto-test task queued"
+    fi
+fi
+
+echo ""

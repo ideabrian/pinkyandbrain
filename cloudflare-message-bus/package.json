@@ -1,0 +1,20 @@
+{
+  "name": "pinky-brain-hub",
+  "version": "1.0.0",
+  "description": "Cloudflare Workers message bus for Pinky & Brain autonomous workflows",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create pinky-brain-messages",
+    "db:init": "wrangler d1 execute pinky-brain-messages --file=./schema.sql",
+    "db:local": "wrangler d1 execute pinky-brain-messages --local --file=./schema.sql"
+  },
+  "keywords": ["cloudflare", "workers", "message-bus"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241127.0",
+    "wrangler": "^3.94.0"
+  }
+}
