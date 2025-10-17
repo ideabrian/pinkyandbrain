@@ -1,325 +1,259 @@
-# Pinky and Brain - Distributed Mac Mini Setup
+# Pinky & Brain Cluster
 
-**Three machines. One brain. Infinite possibilities.**
+> "Are you thinking what I'm thinking, Brain?" 
+> "I think so, Pinky, but this time with autonomous AI agents and distributed orchestration!"
 
-## What Is This?
+A multi-agent development system where three machines collaborate autonomously to plan, build, and deploy software.
 
-A distributed development environment using 3 Mac computers coordinating via Claude agents:
-- **brain** (Mac mini) - The planner and decision-maker
-- **pinky** (Mac mini) - The code executor
-- **maxyolo** (MacBook) - The reviewer and integrator
+## The System
 
-**Philosophy**: Three less-powerful machines at the same price as one powerful machine, with the added benefit of learning networking, orchestration, and distributed systems.
+**brain** (Planner) - Creates technical specifications and architectural plans
+**pinky** (Executor) - Implements code based on brain's specifications  
+**max** (Reviewer) - Tests, reviews, and integrates pinky's work
+
+## Features
+
+- **Autonomous Messaging**: Machines communicate via local and cloud message buses
+- **Distributed Development**: Each machine has a specialized role in the workflow
+- **Knowledge Sharing**: Centralized knowledge base accessible across the cluster
+- **Cloud Deployment**: Automated deployment to Cloudflare Workers and Pages
+- **Workflow Orchestration**: Coordinated task execution across machines
+- **Vote-Based Decisions**: Democratic decision-making via voting system
 
 ## Quick Start
 
+### Prerequisites
+
+- Node.js 18+ installed on all machines
+- Claude Code CLI configured
+- GitHub CLI (`gh`) authenticated
+- SSH keys configured for machine-to-machine communication
+- Cloudflare account (optional, for cloud deployment)
+
+### Setup
+
+1. Clone this repository on each machine:
 ```bash
-# Connect to pinky
-ssh pinky
-
-# Run command on all machines
-./run-on-all.sh "hostname && date"
-
-# Check system resources everywhere
-./run-on-all.sh "top -l 1 | head -5"
+git clone https://github.com/ideabrian/pinkyandbrain-cluster.git ~/pinkyandbrain
+cd ~/pinkyandbrain
 ```
 
-## Setup Guides (In Order)
+2. Install dependencies:
+```bash
+npm install
+```
 
-1. **[SETUP-GUIDE-00-PERMISSIONS.md](./SETUP-GUIDE-00-PERMISSIONS.md)**
-   - Grant Full Disk Access to Terminal
-   - Enable Remote Login
-   - Security settings
+3. Configure environment:
+```bash
+cp .env.example .env
+# Edit .env with your actual values
+```
 
-2. **[SETUP-GUIDE-01-SSH.md](./SETUP-GUIDE-01-SSH.md)**
-   - Password-less SSH setup
-   - Key generation & copying
-   - SSH config for easy access
+4. Set up hostnames (add to /etc/hosts):
+```
+192.168.5.4   pinky.local
+192.168.5.x   brain.local
+192.168.5.x   max.local
+```
 
-3. **[SETUP-GUIDE-02-NETWORKING.md](./SETUP-GUIDE-02-NETWORKING.md)**
-   - Understanding IP addresses
-   - Network topology
-   - Ports & services
-   - Hostname resolution
+5. Start the message bus on each machine:
+```bash
+node claude-messenger.js
+```
 
-4. **[SETUP-GUIDE-03-ORCHESTRATION.md](./SETUP-GUIDE-03-ORCHESTRATION.md)**
-   - Run commands across all machines
-   - Parallel execution
-   - Real-world use cases
-   - Troubleshooting
-
-5. **[SETUP-GUIDE-04-CLAUDE-CODE.md](./SETUP-GUIDE-04-CLAUDE-CODE.md)**
-   - Install Homebrew on all machines
-   - Install Node.js and nvm
-   - Install Claude Code everywhere
-   - Login and parallel sessions
-
-6. **[SETUP-GUIDE-05-MULTI-AGENT.md](./SETUP-GUIDE-05-MULTI-AGENT.md)**
-   - Build HTTP message bus
-   - Deploy across machines
-   - Multi-agent Claude Code communication
-   - Orchestrator automation
-
-7. **[SETUP-GUIDE-06-AUTONOMOUS-ORCHESTRATION.md](./SETUP-GUIDE-06-AUTONOMOUS-ORCHESTRATION.md)**
-   - Task queue system
-   - Autonomous agent coordination
-   - Session-end hooks
-   - Workflow automation
-
-8. **[UTILITIES-GUIDE.md](./UTILITIES-GUIDE.md)**
-   - `pinky` CLI tool
-   - Template library
-   - Git integration
-   - Live dashboard
-
-9. **[SETUP-BRAIN.md](./SETUP-BRAIN.md)** ⭐
-   - Add third Mac mini to system
-   - Complete three-agent orchestration
-   - Advanced workflows
+6. Start the cloud poller (optional, for autonomous operation):
+```bash
+./cloud-poller.sh
+```
 
 ## Architecture
 
-### Network Map
+### Directory Structure
+
 ```
-Router (192.168.5.x)
-│
-├─ brain.local (Mac mini)     → 192.168.5.6   [planner]
-├─ pinky.local (Mac mini)     → 192.168.5.4   [executor]
-└─ max.local (MacBook)        → 192.168.5.2   [reviewer]
-```
-
-### Communication Flow
-```
-brain (planner)
-  ↓ technical specs
-pinky (executor)
-  ↓ implementation
-max (reviewer)
-  ↓ integration
-  ↑ feedback loop
-```
-
-### Cloud Infrastructure
-- **Message Bus**: Cloudflare Workers (pinky-brain-hub.b-9f2.workers.dev)
-- **Knowledge Base**: Cloudflare Pages (knowledge-search.pages.dev)
-- **Job Board**: FunJobs.ai (funjobs-ai.b-9f2.workers.dev)
-
-## Current Capabilities
-
-✅ **Three-Machine Cluster**: All machines online and coordinated
-✅ **SSH Access**: Password-less SSH between all machines
-✅ **Claude Agent Orchestration**: Specialized roles (planner/executor/reviewer)
-✅ **Multi-Agent Communication**: Local HTTP message bus + Cloud Cloudflare Workers
-✅ **Autonomous Polling**: Cloud-based message queue with auto-execution
-✅ **Voting System**: Democratic decision-making for critical actions
-✅ **Knowledge Base**: Searchable documentation via Cloudflare Pages
-✅ **Workflow Automation**: Task queues, session hooks, auto-chaining
-
-## Use Cases
-
-### 1. Multi-Project Development
-```bash
-# maxyolo: Frontend dev server
-# pinky: Backend API
-# brain: Database & monitoring
-```
-
-### 2. Parallel Testing
-```bash
-./run-on-all.sh "cd ~/project && npm test"
-# All machines run tests simultaneously
-```
-
-### 3. Learning Distributed Systems
-- Real hardware, real network
-- No cloud costs
-- Hands-on experience with orchestration
-- Fault tolerance & reliability testing
-
-### 4. Load Testing
-```bash
-# Each machine simulates users
-./run-on-all.sh "ab -n 1000 -c 10 http://localhost:3000/"
-```
-
-## Key Services & Scripts
-
-### Voting System
-Democratic decision-making for critical actions:
-```bash
-# Initialize a vote
-./vote-simple.sh "Should we deploy to production?" brain pinky max
-
-# Check vote status
-cat votes/vote-*.json | jq .
-```
-
-### Cloud Poller
-Autonomous message polling from Cloudflare Workers:
-```bash
-# Check poller status
-ps aux | grep cloud-poller
-
-# View logs
-tail -f cloud-poller-*.log
+pinkyandbrain/
+├── scripts/              # Utility scripts
+│   ├── setup/           # Initial setup scripts
+│   ├── deployment/      # Deployment automation
+│   └── utilities/       # Helper utilities
+├── cloudflare/          # Cloud deployment
+│   ├── workers/         # Cloudflare Workers
+│   └── pages/           # Cloudflare Pages
+├── docs/                # Documentation
+├── workflows/           # Workflow definitions
+│   └── templates/       # Workflow templates
+├── git-hooks/           # Git hooks for automation
+└── workflow-output/     # Generated code output
 ```
 
 ### Message Bus
-Local and cloud-based agent communication:
+
+The system uses two message buses:
+- **Local**: HTTP server on port 3100 (each machine)
+- **Cloud**: Cloudflare Worker for cross-network communication
+
+Send a message:
 ```bash
-# Send local message
-curl -X POST http://max.local:3100/send \
+curl -X POST http://RECIPIENT.local:3100/send \
   -H "Content-Type: application/json" \
-  -d '{"from":"pinky","to":"max","body":"Hello!"}'
-
-# Send via cloud (with approval)
-curl -X POST https://pinky-brain-hub.b-9f2.workers.dev/send \
-  -H "Content-Type: application/json" \
-  -d '{"from":"pinky","to":"brain","body":"Cloud message"}'
+  -d '{"from":"sender","to":"recipient","body":"message"}'
 ```
 
-### `run-on-all.sh`
-Execute commands across all machines in parallel:
+View inbox:
 ```bash
-./run-on-all.sh "command here"
+curl http://localhost:3100/inbox
 ```
 
-### SSH Config (`~/.ssh/config`)
-Quick access to machines:
+### Workflow Example
+
+1. **Planning**: Send feature request to brain
+2. **Specification**: Brain creates technical spec and sends to pinky
+3. **Implementation**: Pinky writes code based on spec
+4. **Review**: Pinky notifies max when complete
+5. **Integration**: Max tests and merges to main
+
+## Key Scripts
+
+### Setup
+- `setup-new-machine.sh` - Initial machine setup
+- `setup-gh-auth.sh` - GitHub CLI authentication
+- `setup-brain-ssh.sh` - SSH key distribution
+
+### Orchestration
+- `orchestrator.sh` - Main workflow orchestrator
+- `cloud-poller.sh` - Autonomous message polling
+- `process-message.sh` - Message processing handler
+
+### Utilities
+- `generate-context.sh` - Update system context
+- `gm.sh` - Quick message sending
+- `pinky-cli.sh` - Pinky command-line interface
+- `knowledge-cli.sh` - Knowledge base interface
+
+### Deployment
+- `deploy-to-brain.sh` - Deploy updates to brain machine
+- `run-on-all.sh` - Execute command on all machines
+
+## Voting System
+
+Make cluster-wide decisions via voting:
+
+```bash
+./vote-simple.sh "Should we implement feature X?" "yes,no,later"
 ```
-Host pinky
-    HostName 192.168.5.80
-    User pinky
-    IdentityFile ~/.ssh/id_machines
-    IdentitiesOnly yes
+
+Votes are recorded in `votes/` and can be queried by any machine.
+
+## Knowledge Base
+
+Share knowledge across the cluster:
+
+```bash
+# Add knowledge
+./knowledge-cli.sh add "Topic" "Content here"
+
+# Search knowledge
+./knowledge-cli.sh search "keyword"
+
+# View all knowledge
+curl https://knowledge-search.pages.dev
 ```
 
-Usage: `ssh pinky`
+## Autonomous Operation
 
-## Key Learnings
+The system can run fully autonomously:
 
-**Networking Basics**
-- Private IP addresses (192.168.x.x)
-- Ports (SSH=22, HTTP=80, HTTPS=443)
-- Hostname resolution (.local domains)
-- Broadcast addresses & subnets
+1. Cloud poller monitors for incoming messages
+2. Messages trigger Claude Code with appropriate prompts
+3. Claude processes task and generates response
+4. Response is automatically sent back via message bus
 
-**SSH & Security**
-- Key-based authentication
-- SSH agent for key management
-- Config files for easy access
-- Password-less connections
+Enable autonomous mode:
+```bash
+./cloud-poller.sh &
+```
 
-**Parallel Execution**
-- Background processes (&)
-- Wait command
-- Exit code handling
-- Color-coded output
+## Development
 
-## Next Steps
+### Adding a New Workflow
 
-### Completed Milestones
-- [x] Three-machine cluster fully operational
-- [x] Claude Code sessions on each machine with specialized roles
-- [x] Multi-agent communication (local + cloud)
-- [x] Autonomous task queue orchestration
-- [x] Voting system for democratic decisions
-- [x] Cloud polling for async workflows
-- [x] Knowledge base with search UI
-- [x] Session-end hooks for task chaining
+1. Create workflow definition in `workflows/`
+2. Add template to `workflows/templates/`
+3. Update orchestrator to recognize new workflow
+4. Test on a single machine first
+5. Deploy to cluster
 
-### Upcoming Features
-- [ ] Live metrics dashboard (timeline.html + dashboard.html)
-- [ ] Shared file system (NFS or syncthing)
-- [ ] Load balancer for distributed workloads
-- [ ] Automated testing pipeline across machines
-- [ ] Container orchestration (Docker Swarm)
-- [ ] Blog deployment (sawdust.ai strategy)
+### Creating a Custom Message Handler
+
+1. Add handler logic to `process-message.sh`
+2. Test with sample messages
+3. Deploy via `deploy-to-brain.sh`
+
+## Cloud Infrastructure
+
+### Deployed Services
+
+- **Message Bus**: https://pinky-brain-hub.b-9f2.workers.dev
+- **Knowledge Search**: https://knowledge-search.pages.dev
+- **FunJobs.ai**: https://funjobs-ai.b-9f2.workers.dev
+
+### Deployment
+
+Deploy to Cloudflare:
+```bash
+cd cloudflare/workers/message-bus
+wrangler deploy
+```
 
 ## Troubleshooting
 
-**Can't SSH to a machine?**
-```bash
-# Check if it's reachable
-ping 192.168.5.80
+### Messages Not Delivering
 
-# Check if SSH is enabled
-nc -zv 192.168.5.80 22
+1. Check message bus is running: `curl http://localhost:3100/inbox`
+2. Verify hostname resolution: `ping brain.local`
+3. Check firewall settings on port 3100
 
-# Test with verbose output
-ssh -v pinky
-```
+### Cloud Poller Not Responding
 
-**Command fails on one machine?**
-- Test command locally first
-- Check if software is installed
-- Verify file paths exist
-- Check permissions
+1. Check if running: `ps aux | grep cloud-poller`
+2. View logs: `tail -f cloud-poller.log`
+3. Restart: `pkill -f cloud-poller && ./cloud-poller.sh &`
 
-**Want to reset SSH setup?**
-```bash
-# On the remote machine
-rm ~/.ssh/authorized_keys
+### SSH Connection Issues
 
-# Start over from SETUP-GUIDE-01-SSH.md
-```
+1. Test SSH: `ssh brain.local "echo success"`
+2. Check SSH keys: `ls -la ~/.ssh/`
+3. Re-run setup: `./setup-brain-ssh.sh`
 
-## Resources
+## Security Notes
 
-**What We Built**
-- Distributed command execution
-- Network communication
-- Parallel processing
-- System administration skills
+- Never commit `.env` files
+- Never commit `CONTEXT.json` (contains runtime secrets)
+- Use SSH keys for machine-to-machine auth
+- Rotate API keys regularly
+- Keep Cloudflare tokens secure
 
-**What You're Learning**
-- Networking fundamentals
-- SSH & security
-- Shell scripting
-- Distributed systems concepts
-- Infrastructure as code
+## Documentation
 
-**Skills That Transfer**
-- Everything here scales to cloud servers
-- Same SSH principles work with AWS/GCP/Azure
-- Orchestration patterns apply to Kubernetes
-- Parallel execution = understanding async programming
+See `docs/` directory for detailed documentation:
+- System architecture
+- Setup guides
+- Workflow design
+- Training materials
+- API references
 
-## The Philosophy
+## Contributing
 
-> "Three less-powerful computers at the same price as one powerful machine"
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-**Why this works:**
-1. **Separate contexts** - No mixing concerns, each machine has a purpose
-2. **Real distributed system** - Learn by doing, not simulating
-3. **Cost effective** - Same total price, more flexibility
-4. **Skills compound** - Learning now pays off for cloud/enterprise work
+## License
 
-**The Name:**
-- **Pinky**: "Gee, Brain, what do you want to do tonight?"
-- **Brain**: "The same thing we do every night, Pinky - try to take over the world!"
+Private repository - All rights reserved.
 
-Except here, we're taking over the world... of distributed computing. 🌍
+## Team
 
----
+- **brain** - The planner and architect
+- **pinky** - The executor and builder  
+- **max** - The reviewer and integrator
 
-## Project Status
-
-**Phase**: Production (Three-agent autonomous system operational!)
-
-**Latest Achievement**:
-- ✅ Three-machine cluster with specialized Claude agents
-- ✅ Democratic voting system for critical decisions
-- ✅ Cloud-based async communication via Cloudflare Workers
-- ✅ Knowledge base with searchable documentation
-- ✅ Autonomous workflow orchestration
-
-**Current Project**: GitHub repository setup (approved via unanimous vote 3/3)
-
-**Next Phase**: Blog deployment (sawdust.ai) documenting the infinite loop debugging adventure
-
----
-
-Built with curiosity, automation, and an abundance of SSH keys.
-
-**Repository**: [github.com/ideabrian/pinkyandbrain](https://github.com/ideabrian/pinkyandbrain)
+"Same thing we do every night, Pinky - try to build better software!"
