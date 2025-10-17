@@ -1,0 +1,31 @@
+# Machine-specific data files
+inbox-*.json
+status-*.json
+*.log
+
+# Directories with machine-specific data
+sessions/
+heartbeats/
+archive/
+votes/*.json
+!votes/README.md
+
+# Temporary files
+/tmp/
+*.tmp
+*.swp
+.DS_Store
+
+# Output files
+claude-output-*
+claude-context-*
+claude-cloud-*
+
+# Secrets
+*.key
+*.pem
+.env
+.api-key
+
+# Node modules if any
+node_modules/
