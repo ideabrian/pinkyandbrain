@@ -82,16 +82,20 @@ $MESSAGE_BODY
 **Prompt**: $(cat "$PROMPT_FILE")
 EOF
 
-                # Launch autonomous Claude session using production executor
-                if [ -f "$HOME/pinkyandbrain/autonomous-executor.sh" ]; then
-                    log "Launching autonomous executor (claude -p mode)..."
-                    "$HOME/pinkyandbrain/autonomous-executor.sh" "$ROLE" "$MESSAGE_ID" "$CONTEXT_FILE" &
-                    log "${GREEN}✓ Autonomous execution started${NC}"
-                    log "Monitor: tail -f ~/pinkyandbrain/autonomous-sessions.log"
-                else
-                    log "Context prepared at: $CONTEXT_FILE"
-                    log "${YELLOW}⚠ autonomous-executor.sh not found - install first${NC}"
-                fi
+                # Launch Claude Code (in background)
+                log "Context prepared at: $CONTEXT_FILE"
+
+                # Execute /opt/homebrew/bin/claude -p in background to process the message
+                OUTPUT_FILE="/tmp/claude-output-$MESSAGE_ID.txt"
+                (PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/claude -p "Process this message and respond appropriately" < "$CONTEXT_FILE" > "$OUTPUT_FILE" 2>&1) &
+                CLAUDE_PID=$!
+                log "Claude launched in background (PID: $CLAUDE_PID, output: $OUTPUT_FILE)"
+
+                # Launch response handler in background
+                (sleep 2 && $HOME/pinkyandbrain/send-response.sh "$CLAUDE_PID" "$OUTPUT_FILE" "$MESSAGE_FROM" "$ROLE" >> "$LOG_FILE" 2>&1) &
+                log "Response handler launched for message from $MESSAGE_FROM"
+
+                log "${GREEN}✓ Local message processed${NC}"
             else
                 log "${YELLOW}⚠ Prompt file not found: $PROMPT_FILE${NC}"
             fi
@@ -150,6 +154,13 @@ curl -X POST $CLOUD_BUS/update/$WORKFLOW_ID \\
 EOF
 
                 log "Context prepared at: $CONTEXT_FILE"
+
+                # Execute /opt/homebrew/bin/claude -p in background to process the message
+                OUTPUT_FILE="/tmp/claude-cloud-output-$CLOUD_MSG_ID.txt"
+                (PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/claude -p "Process this message and respond appropriately" < "$CONTEXT_FILE" > "$OUTPUT_FILE" 2>&1) &
+                CLAUDE_PID=$!
+                log "Claude launched in background (PID: $CLAUDE_PID, output: $OUTPUT_FILE)"
+
                 log "${GREEN}✓ Cloud message processed${NC}"
             else
                 log "${YELLOW}⚠ Prompt file not found: $PROMPT_FILE${NC}"
