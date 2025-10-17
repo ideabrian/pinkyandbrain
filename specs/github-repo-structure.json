@@ -1,0 +1,249 @@
+{
+  "feature": "Pinky & Brain Cluster - GitHub Repository Setup",
+  "objective": "Create a centralized GitHub repository for version control, collaboration, and knowledge sharing across the distributed development cluster",
+  "repository": {
+    "name": "pinkyandbrain-cluster",
+    "description": "Distributed development system with 3 machines: brain (planner), pinky (executor), max (reviewer)",
+    "visibility": "private",
+    "url": "To be created at: https://github.com/[username]/pinkyandbrain-cluster"
+  },
+  "directory_structure": [
+    {
+      "path": "/",
+      "files": [
+        "README.md",
+        ".gitignore",
+        ".env.example",
+        "LICENSE",
+        "CONTRIBUTING.md"
+      ]
+    },
+    {
+      "path": "/scripts",
+      "purpose": "Core cluster operation scripts",
+      "files": [
+        "cloud-poller.sh",
+        "loop.sh",
+        "messaging-server.js",
+        "blog-server.js",
+        "vote.sh",
+        "process-message.sh"
+      ]
+    },
+    {
+      "path": "/docs",
+      "purpose": "System documentation and guides",
+      "files": [
+        "ARCHITECTURE.md",
+        "SETUP.md",
+        "VOTING-SYSTEM.md",
+        "MESSAGING-PROTOCOL.md",
+        "PORT-DIRECTORY.md",
+        "PUBLISHING-WORKFLOW.md",
+        "SAWDUST-AI-SETUP.md"
+      ]
+    },
+    {
+      "path": "/training",
+      "purpose": "Training materials and prompts for each role",
+      "subdirs": [
+        "/training/brain",
+        "/training/pinky",
+        "/training/max"
+      ],
+      "files": [
+        "training/brain/role-prompt.md",
+        "training/pinky/role-prompt.md",
+        "training/max/role-prompt.md",
+        "training/ONBOARDING.md"
+      ]
+    },
+    {
+      "path": "/specs",
+      "purpose": "Technical specifications created by brain",
+      "note": "Brain stores all feature specs here before sending to pinky"
+    },
+    {
+      "path": "/implementations",
+      "purpose": "Code implementations from pinky",
+      "note": "Pinky's completed work, organized by feature"
+    },
+    {
+      "path": "/tests",
+      "purpose": "Test results and integration reports from max"
+    },
+    {
+      "path": "/votes",
+      "purpose": "Voting history and decisions",
+      "note": "Archive of all cluster decisions"
+    },
+    {
+      "path": "/blog-drafts",
+      "purpose": "Blog posts and public-facing content"
+    },
+    {
+      "path": "/config",
+      "purpose": "Configuration templates",
+      "files": [
+        "config/hosts.example.json",
+        "config/ports.json",
+        "config/roles.json"
+      ]
+    }
+  ],
+  "critical_files": {
+    "README.md": {
+      "sections": [
+        "Overview of the distributed system",
+        "Machine roles (brain, pinky, max)",
+        "Quick start guide",
+        "Architecture diagram",
+        "Voting system explanation",
+        "Contribution guidelines"
+      ]
+    },
+    ".gitignore": {
+      "must_exclude": [
+        ".env",
+        "*.local",
+        "node_modules/",
+        "*.log",
+        "*.pid",
+        ".DS_Store",
+        "votes/vote-*.json",
+        "CONTEXT.json",
+        "tmp/",
+        "*.private",
+        "*-secrets.*"
+      ]
+    },
+    ".env.example": {
+      "template_vars": [
+        "MACHINE_NAME=brain|pinky|max",
+        "MACHINE_IP=192.168.x.x",
+        "MESSAGE_PORT=3100",
+        "BLOG_PORT=3200",
+        "CLAUDE_API_KEY=your_key_here",
+        "GITHUB_TOKEN=your_token_here"
+      ]
+    },
+    "CONTRIBUTING.md": {
+      "content": "Guidelines for how the cluster collaborates, voting procedures, and code review process"
+    }
+  },
+  "migration_steps": [
+    {
+      "step": 1,
+      "action": "Create GitHub repository",
+      "owner": "pinky",
+      "details": "Create private repo at GitHub, initialize with README"
+    },
+    {
+      "step": 2,
+      "action": "Setup local git repository",
+      "owner": "pinky",
+      "commands": [
+        "cd ~/pinkyandbrain",
+        "git init",
+        "git remote add origin [REPO_URL]"
+      ]
+    },
+    {
+      "step": 3,
+      "action": "Create directory structure",
+      "owner": "pinky",
+      "details": "Create all directories listed in directory_structure"
+    },
+    {
+      "step": 4,
+      "action": "Create .gitignore and .env.example",
+      "owner": "pinky",
+      "details": "Use templates from critical_files"
+    },
+    {
+      "step": 5,
+      "action": "Move existing files to appropriate directories",
+      "owner": "pinky",
+      "mapping": {
+        "cloud-poller.sh": "scripts/",
+        "loop.sh": "scripts/",
+        "blog-server.js": "scripts/",
+        "PORT-DIRECTORY.md": "docs/",
+        "PUBLISHING-WORKFLOW.md": "docs/",
+        "SAWDUST-AI-SETUP.md": "docs/",
+        "blog-drafts/*": "blog-drafts/",
+        "prompts/*": "training/"
+      }
+    },
+    {
+      "step": 6,
+      "action": "Create comprehensive README.md",
+      "owner": "brain",
+      "note": "Brain will draft this, pinky will add to repo"
+    },
+    {
+      "step": 7,
+      "action": "Initial commit and push",
+      "owner": "pinky",
+      "commands": [
+        "git add .",
+        "git commit -m 'Initial commit: Pinky & Brain Cluster repository structure'",
+        "git push -u origin main"
+      ]
+    },
+    {
+      "step": 8,
+      "action": "Clone repository on other machines",
+      "owner": "all",
+      "details": "Each machine (brain, max) clones the repository"
+    },
+    {
+      "step": 9,
+      "action": "Update workflow to use git",
+      "owner": "all",
+      "details": "Integrate git operations into daily workflow (commit, push, pull)"
+    }
+  ],
+  "security_considerations": [
+    "Never commit .env files with real credentials",
+    "Use .env.example as template only",
+    "Keep API keys in environment variables",
+    "Don't commit CONTEXT.json (contains IP addresses)",
+    "Use GitHub secrets for CI/CD if needed",
+    "Review all commits before pushing"
+  ],
+  "git_workflow": {
+    "brain": {
+      "creates": "specs/*.json",
+      "commits": "After completing specifications",
+      "pushes": "Daily or after major spec completions"
+    },
+    "pinky": {
+      "creates": "implementations/*, scripts/*",
+      "commits": "After completing each implementation task",
+      "pushes": "After successful local testing"
+    },
+    "max": {
+      "creates": "tests/*, integration reports",
+      "commits": "After review and testing",
+      "pushes": "After approving integrations"
+    }
+  },
+  "success_criteria": [
+    "Repository created and accessible to all machines",
+    "All machines can clone, commit, and push",
+    "Directory structure matches specification",
+    "README.md is comprehensive and clear",
+    "No sensitive data in repository",
+    "All existing critical scripts are preserved",
+    ".gitignore properly excludes sensitive files"
+  ],
+  "next_phase": {
+    "after_setup": [
+      "Setup GitHub Actions for automated testing",
+      "Add branch protection rules",
+      "Create issue templates",
+      "Setup project board for task tracking"
+    ]
+  }
+}
