@@ -2,6 +2,8 @@
 inbox-*.json
 status-*.json
 *.log
+CONTEXT.json
+CONTEXT-SUMMARY.txt
 
 # Directories with machine-specific data
 sessions/
