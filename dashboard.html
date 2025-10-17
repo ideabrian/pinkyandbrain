@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinky & Brain - Live Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(100, 200, 255, 0.2);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #64b5f6, #e91e63);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(100, 200, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 20px rgba(100, 200, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #64b5f6;
+        }
+
+        .status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+
+        .status.online {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status.offline {
+            background: #f44336;
+            color: white;
+        }
+
+        .status.warning {
+            background: #ff9800;
+            color: white;
+        }
+
+        .agent-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .info-item {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 5px;
+        }
+
+        .info-label {
+            color: #888;
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #64b5f6;
+        }
+
+        .message-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .message {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid #64b5f6;
+            border-radius: 4px;
+            font-size: 0.85em;
+            transition: all 0.2s;
+        }
+
+        .message:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .message.unread {
+            border-left-color: #e91e63;
+            background: rgba(233, 30, 99, 0.1);
+        }
+
+        .message.task {
+            border-left-color: #ff9800;
+        }
+
+        .message.completion {
+            border-left-color: #4caf50;
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .message-from {
+            font-weight: bold;
+            color: #64b5f6;
+        }
+
+        .message-time {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .message-body {
+            color: #ccc;
+            line-height: 1.4;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .refresh-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #4caf50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .chart {
+            height: 200px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 181, 246, 0.5);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 181, 246, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧠 Pinky & Brain Dashboard</h1>
+            <p class="subtitle">Real-time distributed agent orchestration</p>
+        </header>
+
+        <div class="controls">
+            <button onclick="refresh()">🔄 Refresh Now</button>
+            <button onclick="clearAllMessages()">🗑️ Clear All Messages</button>
+            <button onclick="toggleAutoRefresh()">
+                <span id="autoRefreshText">⏸️ Pause Auto-Refresh</span>
+            </button>
+            <span style="color: #888; margin-left: auto; display: flex; align-items: center; gap: 8px;">
+                <span class="refresh-indicator"></span>
+                Auto-refresh every 5s
+            </span>
+        </div>
+
+        <div class="grid">
+            <!-- Agent Cards will be inserted here -->
+        </div>
+
+        <div class="card" style="grid-column: 1 / -1;">
+            <div class="card-header">
+                <div class="card-title">📬 Recent Messages</div>
+                <select id="messageFilter" onchange="filterMessages()">
+                    <option value="all">All Messages</option>
+                    <option value="task">Tasks Only</option>
+                    <option value="completion">Completions Only</option>
+                    <option value="unread">Unread Only</option>
+                </select>
+            </div>
+            <div id="messageList" class="message-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const agents = [
+            { name: 'maxyolo-claude', bus: 'http://192.168.5.76:3100', color: '#64b5f6' },
+            { name: 'pinky-claude', bus: 'http://192.168.5.80:3100', color: '#e91e63' }
+        ];
+
+        let autoRefreshEnabled = true;
+        let allMessages = [];
+
+        async function fetchAgentStatus(agent) {
+            try {
+                const response = await fetch(`${agent.bus}/health`);
+                const data = await response.json();
+                return { ...agent, status: 'online', data };
+            } catch (error) {
+                return { ...agent, status: 'offline', data: null };
+            }
+        }
+
+        async function fetchAgentMessages(agent) {
+            try {
+                const response = await fetch(`${agent.bus}/inbox`);
+                const data = await response.json();
+                return data.messages || [];
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString();
+        }
+
+        function renderAgentCard(agent, status, inbox) {
+            const total = inbox.total || 0;
+            const unread = inbox.unread || 0;
+
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">🤖 ${agent.name}</div>
+                        <div class="status ${status}">${status.toUpperCase()}</div>
+                    </div>
+                    <div class="agent-info">
+                        <div class="info-item">
+                            <div class="info-label">Total Messages</div>
+                            <div class="info-value">${total}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Unread</div>
+                            <div class="info-value" style="color: ${unread > 0 ? '#e91e63' : '#4caf50'}">${unread}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMessage(msg) {
+            const unreadClass = msg.read ? '' : 'unread';
+            const typeClass = msg.type || '';
+
+            return `
+                <div class="message ${unreadClass} ${typeClass}" data-type="${msg.type || 'message'}">
+                    <div class="message-header">
+                        <span class="message-from">${msg.from} → ${msg.to}</span>
+                        <span class="message-time">${formatTime(msg.timestamp)}</span>
+                    </div>
+                    <div class="message-body">
+                        <strong>${msg.subject || 'No subject'}</strong> [${msg.type || 'message'}]<br>
+                        ${msg.body.substring(0, 150)}${msg.body.length > 150 ? '...' : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function refresh() {
+            const grid = document.querySelector('.grid');
+            grid.innerHTML = '';
+
+            allMessages = [];
+
+            for (const agent of agents) {
+                const { status, data } = await fetchAgentStatus(agent);
+                const messages = await fetchAgentMessages(agent);
+
+                // Add agent name to messages
+                messages.forEach(msg => {
+                    msg.agentName = agent.name;
+                    allMessages.push(msg);
+                });
+
+                const inbox = data || { total: 0, unread: 0 };
+                grid.innerHTML += renderAgentCard(agent, status, inbox);
+            }
+
+            // Sort messages by timestamp (newest first)
+            allMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            filterMessages();
+        }
+
+        function filterMessages() {
+            const filter = document.getElementById('messageFilter').value;
+            const messageList = document.getElementById('messageList');
+
+            let filtered = allMessages;
+
+            if (filter === 'unread') {
+                filtered = allMessages.filter(m => !m.read);
+            } else if (filter === 'task') {
+                filtered = allMessages.filter(m => m.type === 'task');
+            } else if (filter === 'completion') {
+                filtered = allMessages.filter(m => m.type === 'completion');
+            }
+
+            messageList.innerHTML = filtered.map(renderMessage).join('');
+
+            if (filtered.length === 0) {
+                messageList.innerHTML = '<div style="text-align: center; color: #666; padding: 40px;">No messages</div>';
+            }
+        }
+
+        async function clearAllMessages() {
+            if (!confirm('Clear all messages from all agents?')) return;
+
+            for (const agent of agents) {
+                try {
+                    await fetch(`${agent.bus}/messages/all`, { method: 'DELETE' });
+                } catch (error) {
+                    console.error(`Failed to clear messages for ${agent.name}`, error);
+                }
+            }
+
+            setTimeout(refresh, 500);
+        }
+
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = !autoRefreshEnabled;
+            const text = document.getElementById('autoRefreshText');
+            text.textContent = autoRefreshEnabled ? '⏸️ Pause Auto-Refresh' : '▶️ Resume Auto-Refresh';
+        }
+
+        // Auto-refresh every 5 seconds
+        setInterval(() => {
+            if (autoRefreshEnabled) {
+                refresh();
+            }
+        }, 5000);
+
+        // Initial load
+        refresh();
+    </script>
+</body>
+</html>

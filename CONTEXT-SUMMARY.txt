@@ -1,0 +1,25 @@
+# SYSTEM CONTEXT - Generated 2025-10-17T17:21:33Z
+
+Current Machine: pinky (192.168.5.4)
+Cluster Status:
+  - pinky.local: ✅ online
+  - brain.local: ✅ online
+  - max.local: ✅ online
+
+Cloud Poller: stopped 
+
+Active Projects:
+  - knowledge-search.pages.dev (Knowledge base UI)
+  - pinky-brain-hub.b-9f2.workers.dev (Message bus + Knowledge API)
+  - funjobs-ai.b-9f2.workers.dev (Job board API)
+
+Recent Knowledge: 0 entries
+
+Key URLs:
+  - Search knowledge: https://knowledge-search.pages.dev
+  - Message bus: https://pinky-brain-hub.b-9f2.workers.dev
+  - Local inbox: http://localhost:3100/inbox
+
+Commands:
+  - Update context: ~/pinkyandbrain/generate-context.sh
+  - View full context: cat ~/pinkyandbrain/CONTEXT.json | jq .

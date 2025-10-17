@@ -1,0 +1,79 @@
+#!/bin/bash
+
+# pre-push - Validate before pushing
+# Install: cp pre-push .git/hooks/ && chmod +x .git/hooks/pre-push
+
+echo "╔════════════════════════════════════════════════════════════╗"
+echo "║  Git Hook: Pre-Push Validation                             ║"
+echo "╚════════════════════════════════════════════════════════════╝"
+echo ""
+
+# Check message bus availability
+if ! curl -s http://localhost:3100/health > /dev/null 2>&1; then
+    echo "⚠️  Message bus not available"
+    echo "   Push will proceed, but no validation tasks sent"
+    exit 0
+fi
+
+# Get branch info
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+REMOTE="$1"
+URL="$2"
+
+echo "Branch: $BRANCH"
+echo "Remote: $REMOTE"
+echo ""
+
+# Prevent direct push to main/master
+if [[ "$BRANCH" == "main" ]] || [[ "$BRANCH" == "master" ]]; then
+    echo "🚨 Pushing to $BRANCH requires validation"
+    echo ""
+    echo "Sending validation tasks..."
+
+    # Task 1: Run tests
+    echo "📤 Task 1: Run full test suite"
+    curl -s -X POST "http://192.168.5.80:3100/send" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"from\": \"git-hook\",
+            \"to\": \"pinky-claude\",
+            \"type\": \"task\",
+            \"subject\": \"Pre-Push Tests\",
+            \"body\": \"About to push to $BRANCH. Run full test suite and block push if any tests fail. This is CRITICAL.\",
+            \"priority\": \"critical\",
+            \"metadata\": {
+                \"task_id\": \"pre-push-tests-$(date +%s)\",
+                \"trigger\": \"pre-push\",
+                \"branch\": \"$BRANCH\",
+                \"blocking\": true
+            }
+        }" > /dev/null
+
+    # Task 2: Lint check
+    echo "📤 Task 2: Lint check"
+    curl -s -X POST "http://localhost:3100/send" \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"from\": \"git-hook\",
+            \"to\": \"maxyolo-claude\",
+            \"type\": \"task\",
+            \"subject\": \"Pre-Push Lint\",
+            \"body\": \"About to push to $BRANCH. Run linter and check for critical errors.\",
+            \"priority\": \"high\",
+            \"metadata\": {
+                \"task_id\": \"pre-push-lint-$(date +%s)\",
+                \"trigger\": \"pre-push\",
+                \"branch\": \"$BRANCH\"
+            }
+        }" > /dev/null
+
+    echo ""
+    echo "⏳ Validation tasks sent. Check inbox for results:"
+    echo "   pinky inbox --type task"
+    echo ""
+    echo "⚠️  Proceeding with push, but CHECK RESULTS before merge!"
+    echo ""
+fi
+
+# Always allow push (tasks are informational)
+exit 0

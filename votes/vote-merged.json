@@ -1,0 +1,14 @@
+{
+  "id": "vote-1760631201-b384380a",
+  "question": "Should we deploy the GitHub repo to all machines?",
+  "proposedBy": "max",
+  "createdAt": "2025-10-16T16:13:21Z",
+  "expiresAt": "2025-10-17T16:13:21Z",
+  "status": "active",
+  "votes": {
+    "max": "yes",
+    "pinky": "yes",
+    "brain": "yes"
+  },
+  "threshold": "majority"
+}

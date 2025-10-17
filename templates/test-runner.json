@@ -1,0 +1,33 @@
+{
+  "name": "test-runner",
+  "description": "Run test suite and report results",
+  "template": {
+    "from": "{{from}}",
+    "to": "{{to}}",
+    "type": "task",
+    "subject": "Run Test Suite",
+    "body": "Run the test suite with npm test. Report the number of passing/failing tests and any error messages. Send results back to {{reply_to}}.",
+    "priority": "high",
+    "metadata": {
+      "task_id": "test-{{timestamp}}",
+      "template": "test-runner",
+      "auto_execute": false,
+      "reply_to": "{{reply_to}}",
+      "timeout": 300
+    }
+  },
+  "variables": {
+    "from": {
+      "description": "Agent sending the task",
+      "default": "orchestrator"
+    },
+    "to": {
+      "description": "Agent to run tests",
+      "default": "pinky-claude"
+    },
+    "reply_to": {
+      "description": "Where to send results",
+      "default": "maxyolo-claude"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "account_id": "9f2fcf619e8e9758a4b7e95c878dd49c",
+  "generated_at": "2025-10-17T15:09:14Z",
+  "pages": {
+    "count": 0,
+    "projects": []
+  },
+  "workers": {
+    "count": 2,
+    "projects": [
+      {
+        "name": "pinky-brain-hub",
+        "description": "Cloud message bus for Pinky & Brain cluster",
+        "url": "https://pinky-brain-hub.b-9f2.workers.dev",
+        "local_path": "~/pinkyandbrain/cloudflare-message-bus",
+        "features": ["D1 Database", "Message Queue", "Knowledge Base", "Voting System"]
+      },
+      {
+        "name": "funjobs-ai",
+        "description": "AI-powered job board API",
+        "url": "https://funjobs-ai.b-9f2.workers.dev",
+        "local_path": "~/pinkyandbrain/funjobs-ai",
+        "features": ["D1 Database", "R2 Storage", "Cloudflare AI", "Image Upload", "Job Scraping"]
+      }
+    ]
+  },
+  "summary": {
+    "total_deployments": 2,
+    "pages_projects": 0,
+    "workers_projects": 2
+  }
+}
