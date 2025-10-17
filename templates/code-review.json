@@ -1,0 +1,32 @@
+{
+  "name": "code-review",
+  "description": "Automated code review with suggestions",
+  "template": {
+    "from": "{{from}}",
+    "to": "{{to}}",
+    "type": "task",
+    "subject": "Code Review: {{files}}",
+    "body": "Review the following files for code quality, best practices, security issues, and performance: {{files}}. Provide specific suggestions for improvement. Check for: 1) Type safety 2) Error handling 3) Performance bottlenecks 4) Security vulnerabilities 5) Code duplication. Format output as markdown with severity levels (critical/high/medium/low).",
+    "priority": "normal",
+    "metadata": {
+      "task_id": "review-{{timestamp}}",
+      "template": "code-review",
+      "auto_execute": false,
+      "timeout": 600
+    }
+  },
+  "variables": {
+    "from": {
+      "description": "Agent requesting review",
+      "default": "maxyolo-claude"
+    },
+    "to": {
+      "description": "Agent performing review",
+      "default": "pinky-claude"
+    },
+    "files": {
+      "description": "Files to review (comma-separated)",
+      "required": true
+    }
+  }
+}

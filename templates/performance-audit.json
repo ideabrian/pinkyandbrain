@@ -1,0 +1,36 @@
+{
+  "name": "performance-audit",
+  "description": "Comprehensive performance analysis",
+  "template": {
+    "from": "{{from}}",
+    "to": "{{to}}",
+    "type": "task",
+    "subject": "Performance Audit: {{target}}",
+    "body": "Run comprehensive performance audit on {{target}}: 1) Lighthouse score for {{url}} 2) Bundle analysis (identify large dependencies) 3) Database query performance (N+1 queries, slow queries) 4) Memory profiling 5) Network waterfall analysis. Generate report with actionable recommendations prioritized by impact. Include before/after metrics if implementing suggestions.",
+    "priority": "normal",
+    "metadata": {
+      "task_id": "perf-audit-{{timestamp}}",
+      "template": "performance-audit",
+      "auto_execute": false,
+      "timeout": 900
+    }
+  },
+  "variables": {
+    "from": {
+      "description": "Agent requesting audit",
+      "default": "orchestrator"
+    },
+    "to": {
+      "description": "Agent performing audit",
+      "default": "pinky-claude"
+    },
+    "target": {
+      "description": "What to audit (app/api/page)",
+      "required": true
+    },
+    "url": {
+      "description": "URL to test",
+      "default": "http://localhost:3000"
+    }
+  }
+}
