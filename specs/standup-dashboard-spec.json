@@ -1,0 +1,196 @@
+{
+  "feature": "Daily Standup Dashboard",
+  "type": "Web Dashboard",
+  "vote_status": "PASSED (3/3 yes votes)",
+  "priority": "high",
+  "assigned_to": "pinky",
+  "infrastructure": "Standalone Express server + Data aggregation script",
+
+  "components": [
+    {
+      "file": "standup-dashboard.js",
+      "type": "Express Server",
+      "purpose": "Serve standup dashboard web interface",
+      "port": 3777,
+      "dependencies": ["express", "marked"],
+      "features": [
+        "Homepage with daily standup summary",
+        "Historical standups view",
+        "Auto-refresh every 60 seconds",
+        "Responsive design"
+      ]
+    },
+    {
+      "file": "generate-standup.sh",
+      "type": "Bash Script",
+      "purpose": "Generate daily standup data from cluster state",
+      "schedule": "Daily at 9:00 AM via cron",
+      "outputs": "standup-summaries/standup-YYYY-MM-DD.json",
+      "data_sources": [
+        "CONTEXT.json - cluster status",
+        "votes/* - voting activity",
+        "cloud-poller logs",
+        "git log - recent commits",
+        "heartbeat status"
+      ]
+    },
+    {
+      "file": "standup-summaries/standup-YYYY-MM-DD.json",
+      "type": "JSON Data File",
+      "purpose": "Store daily standup snapshot",
+      "schema": {
+        "date": "YYYY-MM-DD",
+        "cluster_health": {
+          "pinky": "online|offline",
+          "brain": "online|offline",
+          "max": "online|offline"
+        },
+        "deployments": [],
+        "votes": [],
+        "knowledge_added": [],
+        "commits": [],
+        "processes": {}
+      }
+    }
+  ],
+
+  "files_to_create": [
+    "standup-dashboard.js",
+    "generate-standup.sh",
+    "standup-summaries/.gitkeep"
+  ],
+
+  "implementation_details": {
+    "standup_dashboard_js": {
+      "port": 3777,
+      "routes": [
+        "GET / - Today's standup",
+        "GET /history - List all standups",
+        "GET /standup/:date - Specific date standup"
+      ],
+      "styling": "Similar to blog-server.js (clean, minimal, responsive)",
+      "auto_refresh": "Client-side JS to reload every 60s"
+    },
+
+    "generate_standup_sh": {
+      "data_collection": [
+        "Parse CONTEXT.json for cluster status",
+        "Scan votes/ directory for today's votes",
+        "Git log --since='1 day ago' for commits",
+        "Check cloud-poller logs for deployments",
+        "Parse heartbeat status"
+      ],
+      "output_format": "JSON written to standup-summaries/standup-$(date +%Y-%m-%d).json",
+      "error_handling": "Log errors to generate-standup.log"
+    },
+
+    "cron_setup": {
+      "schedule": "0 9 * * * /Users/brain/pinkyandbrain/generate-standup.sh",
+      "note": "Run daily at 9:00 AM local time"
+    }
+  },
+
+  "ui_requirements": {
+    "sections": [
+      "Cluster Health (status badges for each machine)",
+      "Today's Activity Summary",
+      "Recent Deployments (last 24h)",
+      "Votes (pending, passed, rejected)",
+      "Knowledge Added",
+      "Git Commits",
+      "Process Status (cloud-poller, heartbeat)"
+    ],
+    "colors": {
+      "online": "green",
+      "offline": "red",
+      "passed_vote": "blue",
+      "pending_vote": "yellow"
+    },
+    "responsive": true,
+    "mobile_friendly": true
+  },
+
+  "sample_data_structure": {
+    "date": "2025-10-17",
+    "generated_at": "2025-10-17T09:00:00Z",
+    "cluster_health": {
+      "pinky": {"status": "online", "uptime": "2 days"},
+      "brain": {"status": "online", "uptime": "1 day"},
+      "max": {"status": "online", "uptime": "3 days"}
+    },
+    "summary": {
+      "deployments": 1,
+      "votes_completed": 2,
+      "knowledge_added": 2,
+      "commits": 5
+    },
+    "deployments": [
+      {
+        "project": "knowledge-search",
+        "time": "2025-10-17T08:30:00Z",
+        "url": "https://knowledge-search.pages.dev"
+      }
+    ],
+    "votes": [
+      {
+        "id": "vote-1760623647",
+        "question": "GitHub repository deployment",
+        "status": "passed",
+        "votes": {"pinky": "yes", "brain": "yes", "max": "yes"}
+      }
+    ],
+    "knowledge_added": [
+      {
+        "id": "knowledge-1760715870990",
+        "title": "Move Fast: Deploy Full-Stack Apps in 30 Minutes",
+        "time": "2025-10-17T08:00:00Z"
+      }
+    ],
+    "commits": [
+      {
+        "hash": "2a01fd3",
+        "message": "spec: Add GitHub repository structure",
+        "author": "brain",
+        "time": "2025-10-17T07:00:00Z"
+      }
+    ],
+    "processes": {
+      "cloud_poller": "running",
+      "heartbeat": "running"
+    }
+  },
+
+  "test_criteria": [
+    "Dashboard server starts on port 3777",
+    "Homepage loads and displays today's standup",
+    "generate-standup.sh creates valid JSON output",
+    "All data sources are successfully parsed",
+    "Dashboard auto-refreshes every 60 seconds",
+    "Historical standups are accessible",
+    "Error handling works for missing data",
+    "UI is responsive on mobile and desktop"
+  ],
+
+  "deployment": {
+    "run_command": "node standup-dashboard.js",
+    "optional_background": "nohup node standup-dashboard.js > standup-dashboard.log 2>&1 &",
+    "access_url": "http://localhost:3777 or http://brain.local:3777",
+    "manual_trigger": "./generate-standup.sh (for testing)"
+  },
+
+  "future_enhancements": [
+    "Deploy to Cloudflare Pages for public access",
+    "Add charts/graphs for metrics over time",
+    "Slack/Discord notifications",
+    "Export standups as markdown",
+    "Integration with GitHub Actions"
+  ],
+
+  "notes": [
+    "Reuse blog-server.js styling approach for consistency",
+    "Keep it simple and focused on daily standup essentials",
+    "Ensure script works even if some data sources are unavailable",
+    "Consider adding a manual 'generate now' button in UI",
+    "Make sure JSON output is pretty-printed for readability"
+  ]
+}
