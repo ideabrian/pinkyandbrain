@@ -17,6 +17,12 @@ const os = require('os');
 const app = express();
 const PORT = process.env.PORT || 3100;
 const MACHINE_NAME = os.hostname();
+<<<<<<< HEAD
+=======
+// Also accept messages sent to short hostname and agent name variants
+const MACHINE_SHORT = MACHINE_NAME.split('.')[0]; // "brain" from "brain.local"
+const AGENT_NAME = `${MACHINE_SHORT}-claude`; // "brain-claude"
+>>>>>>> a9e7e4c9096d5b2fff3e0202a778b48917bc7f0c
 const INBOX_FILE = path.join(__dirname, `inbox-${MACHINE_NAME}.json`);
 
 app.use(express.json());
@@ -88,10 +94,28 @@ app.post('/send', async (req, res) => {
 
 // Get inbox (all messages for this machine)
 app.get('/inbox', (req, res) => {
+<<<<<<< HEAD
   const unreadCount = messages.filter(m => !m.read && m.to === MACHINE_NAME).length;
 
   res.json({
     machine: MACHINE_NAME,
+=======
+  // Match messages sent to any variant of this machine's name
+  const isForThisMachine = (m) => {
+    return !m.read && (
+      m.to === MACHINE_NAME ||
+      m.to === MACHINE_SHORT ||
+      m.to === AGENT_NAME ||
+      m.to === 'any'
+    );
+  };
+
+  const unreadCount = messages.filter(isForThisMachine).length;
+
+  res.json({
+    machine: MACHINE_NAME,
+    for: AGENT_NAME,
+>>>>>>> a9e7e4c9096d5b2fff3e0202a778b48917bc7f0c
     total: messages.length,
     unread: unreadCount,
     messages: messages.map(m => ({
@@ -110,10 +134,26 @@ app.get('/inbox', (req, res) => {
 
 // Get unread messages only
 app.get('/inbox/unread', (req, res) => {
+<<<<<<< HEAD
   const unread = messages.filter(m => !m.read && m.to === MACHINE_NAME);
 
   res.json({
     machine: MACHINE_NAME,
+=======
+  // Match messages sent to any variant of this machine's name
+  const unread = messages.filter(m => {
+    return !m.read && (
+      m.to === MACHINE_NAME ||
+      m.to === MACHINE_SHORT ||
+      m.to === AGENT_NAME ||
+      m.to === 'any'
+    );
+  });
+
+  res.json({
+    machine: MACHINE_NAME,
+    for: AGENT_NAME,
+>>>>>>> a9e7e4c9096d5b2fff3e0202a778b48917bc7f0c
     unread: unread.length,
     messages: unread
   });

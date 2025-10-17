@@ -183,7 +183,11 @@
       const [loading, setLoading] = useState(true);
       const [error, setError] = useState(null);
       const [eventCount, setEventCount] = useState(0);
+<<<<<<< HEAD
       const [buffer, setBuffer] = useState([]);
+=======
+      const bufferRef = useRef([]);
+>>>>>>> a9e7e4c9096d5b2fff3e0202a778b48917bc7f0c
 
       const BUFFER_INTERVAL = 30000; // 30 seconds - smooth updates
 
@@ -193,7 +197,11 @@
           const data = await response.json();
 
           if (data.events) {
+<<<<<<< HEAD
             setBuffer(data.events);
+=======
+            bufferRef.current = data.events;
+>>>>>>> a9e7e4c9096d5b2fff3e0202a778b48917bc7f0c
             setEventCount(data.total);
             setLoading(false);
           }
@@ -213,10 +221,17 @@
       // Flush buffer to timeline every 30 seconds
       useEffect(() => {
         const flushInterval = setInterval(() => {
+<<<<<<< HEAD
           setEvents(buffer);
         }, BUFFER_INTERVAL);
         return () => clearInterval(flushInterval);
       }, [buffer]);
+=======
+          setEvents(bufferRef.current);
+        }, BUFFER_INTERVAL);
+        return () => clearInterval(flushInterval);
+      }, []);
+>>>>>>> a9e7e4c9096d5b2fff3e0202a778b48917bc7f0c
 
       return (
         <div style={{ padding: 24, background: '#000', minHeight: '100vh' }}>
