@@ -1,0 +1,403 @@
+{
+  "feature": "Daily Standup Dashboard",
+  "voteId": "vote-1760623950",
+  "status": "approved",
+  "approvedBy": ["brain", "pinky", "max"],
+  "approvedAt": "2025-10-17",
+
+  "overview": {
+    "description": "An automated daily standup summary system that collects activity from all three machines (pinky, brain, max) and displays it on a web dashboard",
+    "goals": [
+      "Provide visibility into daily progress across the distributed system",
+      "Help max prioritize integration work and identify blockers",
+      "Create a historical record of development activity",
+      "Enable asynchronous coordination across machines"
+    ],
+    "userStories": [
+      "As max (reviewer), I want to see what pinky and brain worked on today so I can prioritize integration work",
+      "As any team member, I want to see the cluster's daily progress without checking multiple logs",
+      "As brain (planner), I want to track which specs have been implemented",
+      "As pinky (executor), I want to report completed tasks automatically"
+    ]
+  },
+
+  "architecture": {
+    "components": [
+      {
+        "name": "Standup Collector",
+        "type": "Cron Job Script",
+        "location": "Each machine (pinky, brain, max)",
+        "purpose": "Collects daily activity from git commits, messages, and session logs",
+        "runtime": "Daily at 11:59 PM local time"
+      },
+      {
+        "name": "Standup API",
+        "type": "Cloudflare Worker",
+        "location": "pinky-brain-hub.b-9f2.workers.dev",
+        "purpose": "Receives and stores standup summaries from all machines",
+        "endpoints": [
+          "POST /api/standup - Submit daily standup",
+          "GET /api/standup?date=YYYY-MM-DD - Get standup for a specific date",
+          "GET /api/standup/latest - Get most recent standup",
+          "GET /api/standup/range?start=YYYY-MM-DD&end=YYYY-MM-DD - Get range of standups"
+        ]
+      },
+      {
+        "name": "Standup Dashboard",
+        "type": "Cloudflare Pages Site",
+        "location": "standup-dashboard.pages.dev (new)",
+        "purpose": "Web UI to display daily standup summaries",
+        "features": [
+          "Current day's standup from all machines",
+          "Historical standup browsing with date picker",
+          "Machine health indicators",
+          "Activity timeline view",
+          "Blocker/issue highlighting"
+        ]
+      },
+      {
+        "name": "Standup Database",
+        "type": "Cloudflare KV Store",
+        "location": "Worker KV namespace",
+        "purpose": "Persistent storage for standup summaries",
+        "schema": {
+          "key": "standup:{machine}:{YYYY-MM-DD}",
+          "value": {
+            "machine": "string",
+            "date": "string (YYYY-MM-DD)",
+            "summary": "object (see data model)",
+            "submittedAt": "string (ISO timestamp)"
+          }
+        }
+      }
+    ],
+
+    "dataFlow": [
+      "1. At 11:59 PM each day, cron triggers standup collector on each machine",
+      "2. Collector analyzes git commits, sent messages, session summaries",
+      "3. Collector generates JSON summary and POSTs to standup API",
+      "4. API stores summary in KV with key: standup:{machine}:{date}",
+      "5. Dashboard fetches summaries via API and displays them",
+      "6. Users can browse current and historical standups"
+    ]
+  },
+
+  "dataModel": {
+    "standupSummary": {
+      "machine": "string (pinky|brain|max)",
+      "date": "string (YYYY-MM-DD)",
+      "commits": [
+        {
+          "hash": "string",
+          "message": "string",
+          "timestamp": "string (ISO)",
+          "files_changed": "number"
+        }
+      ],
+      "messagesSent": [
+        {
+          "to": "string",
+          "subject": "string",
+          "timestamp": "string (ISO)"
+        }
+      ],
+      "messagesReceived": [
+        {
+          "from": "string",
+          "subject": "string",
+          "timestamp": "string (ISO)"
+        }
+      ],
+      "sessions": [
+        {
+          "started": "string (ISO)",
+          "duration": "number (seconds)",
+          "summary": "string"
+        }
+      ],
+      "highlights": [
+        "string - notable achievements or completions"
+      ],
+      "blockers": [
+        "string - issues or blockers encountered"
+      ],
+      "stats": {
+        "total_commits": "number",
+        "total_messages_sent": "number",
+        "total_messages_received": "number",
+        "total_session_time": "number (seconds)",
+        "files_modified": "number"
+      }
+    }
+  },
+
+  "implementation": {
+    "phase1": {
+      "name": "Standup Collector Script",
+      "files": [
+        "standup-collector.sh - Main collection script",
+        ".env - Configuration (API endpoint, machine name)"
+      ],
+      "tasks": [
+        "Create standup-collector.sh that analyzes daily activity",
+        "Parse git log for today's commits (git log --since='midnight' --format=...)",
+        "Parse inbox for today's sent messages",
+        "Parse inbox for today's received messages",
+        "Parse session logs from sessions/ directory",
+        "Generate JSON summary matching dataModel schema",
+        "POST summary to standup API endpoint",
+        "Log success/failure to standup-collector.log"
+      ],
+      "cronSetup": [
+        "Add to each machine's crontab:",
+        "59 23 * * * cd /Users/{user}/pinkyandbrain && ./standup-collector.sh >> logs/standup-collector.log 2>&1"
+      ]
+    },
+
+    "phase2": {
+      "name": "Standup API Worker",
+      "directory": "workers/standup-api",
+      "files": [
+        "workers/standup-api/src/index.ts - Main worker code",
+        "workers/standup-api/wrangler.toml - Worker configuration",
+        "workers/standup-api/package.json - Dependencies"
+      ],
+      "tasks": [
+        "Create Cloudflare Worker project in workers/standup-api/",
+        "Implement POST /api/standup endpoint (validate & store)",
+        "Implement GET /api/standup?date=YYYY-MM-DD endpoint",
+        "Implement GET /api/standup/latest endpoint",
+        "Implement GET /api/standup/range endpoint",
+        "Add CORS headers for dashboard access",
+        "Add basic authentication (shared secret from machines)",
+        "Create KV namespace binding: STANDUP_STORE",
+        "Deploy to pinky-brain-hub worker (add routes)"
+      ],
+      "validation": [
+        "Validate machine name is pinky|brain|max",
+        "Validate date format is YYYY-MM-DD",
+        "Validate required fields exist in summary",
+        "Return 400 for invalid data, 201 for success"
+      ]
+    },
+
+    "phase3": {
+      "name": "Standup Dashboard UI",
+      "directory": "dashboard/standup-dashboard",
+      "files": [
+        "dashboard/standup-dashboard/index.html - Main page",
+        "dashboard/standup-dashboard/styles.css - Styling",
+        "dashboard/standup-dashboard/app.js - Dashboard logic",
+        "dashboard/standup-dashboard/package.json - Build config"
+      ],
+      "tasks": [
+        "Create Cloudflare Pages project in dashboard/standup-dashboard/",
+        "Build responsive dashboard layout (3 columns for 3 machines)",
+        "Implement date picker for historical browsing",
+        "Fetch and display standup summaries from API",
+        "Show commits with links to repo (when available)",
+        "Show message activity (sent/received counts)",
+        "Show session summaries",
+        "Highlight blockers in red, highlights in green",
+        "Add machine status indicators (online/offline)",
+        "Add auto-refresh (every 5 minutes)",
+        "Deploy to Cloudflare Pages as standup-dashboard.pages.dev"
+      ],
+      "uiComponents": [
+        "Header with title and date selector",
+        "Machine card for each of: pinky, brain, max",
+        "Stats summary (commits, messages, session time)",
+        "Commits list with timestamps",
+        "Messages activity summary",
+        "Highlights section (green badges)",
+        "Blockers section (red badges)",
+        "Footer with last updated timestamp"
+      ],
+      "styling": [
+        "Dark mode design (matches terminal aesthetic)",
+        "Monospace fonts for code/commits",
+        "Color coding: pinky=pink, brain=blue, max=purple",
+        "Responsive grid layout",
+        "Loading states and error handling"
+      ]
+    },
+
+    "phase4": {
+      "name": "Integration & Testing",
+      "tasks": [
+        "Test standup-collector.sh on all three machines",
+        "Verify API stores data correctly in KV",
+        "Verify dashboard fetches and displays data",
+        "Test date range queries",
+        "Test error handling (API down, invalid data)",
+        "Set up cron jobs on all machines",
+        "Monitor first automated run (next day at 11:59 PM)",
+        "Document any issues and fix",
+        "Update system documentation"
+      ]
+    }
+  },
+
+  "technicalDetails": {
+    "standupCollectorScript": {
+      "language": "Bash",
+      "dependencies": ["jq", "curl", "git"],
+      "configuration": {
+        "MACHINE_NAME": "pinky|brain|max",
+        "API_ENDPOINT": "https://pinky-brain-hub.b-9f2.workers.dev/api/standup",
+        "API_SECRET": "shared-secret-from-env",
+        "GIT_REPO": "/Users/{user}/pinkyandbrain",
+        "INBOX_DIR": "/Users/{user}/pinkyandbrain/inbox",
+        "SESSIONS_DIR": "/Users/{user}/pinkyandbrain/sessions"
+      },
+      "dataCollection": {
+        "commits": "git log --since='midnight' --pretty=format:'{\"hash\":\"%H\",\"message\":\"%s\",\"timestamp\":\"%aI\",\"files\":%N}' --numstat | jq -s .",
+        "sentMessages": "curl http://localhost:3100/inbox | jq '.messages[] | select(.from == $MACHINE_NAME and .timestamp > $TODAY_START)'",
+        "receivedMessages": "curl http://localhost:3100/inbox | jq '.messages[] | select(.to == $MACHINE_NAME and .timestamp > $TODAY_START)'",
+        "sessions": "cat sessions/session-*.txt | grep -A 20 $(date +%Y-%m-%d)"
+      }
+    },
+
+    "apiWorker": {
+      "language": "TypeScript",
+      "framework": "Cloudflare Workers",
+      "dependencies": ["@cloudflare/workers-types"],
+      "kvNamespace": "STANDUP_STORE",
+      "routes": [
+        "pinky-brain-hub.b-9f2.workers.dev/api/standup",
+        "pinky-brain-hub.b-9f2.workers.dev/api/standup/*"
+      ],
+      "authentication": "Bearer token in Authorization header",
+      "rateLimit": "100 requests per minute per IP"
+    },
+
+    "dashboard": {
+      "language": "HTML/CSS/JavaScript",
+      "framework": "Vanilla JS (no heavy frameworks needed)",
+      "apiClient": "Fetch API",
+      "deployment": "Cloudflare Pages",
+      "domain": "standup-dashboard.pages.dev",
+      "caching": "Cache API responses for 5 minutes",
+      "refreshInterval": "Auto-refresh every 5 minutes"
+    }
+  },
+
+  "securityConsiderations": [
+    "API requires authentication token (shared secret)",
+    "CORS restricted to dashboard domain only",
+    "Input validation on all API endpoints",
+    "Rate limiting to prevent abuse",
+    "No sensitive data in standup summaries (passwords, keys, etc.)",
+    "KV data is private (not publicly readable)",
+    "Dashboard is read-only (no write operations)"
+  ],
+
+  "testCriteria": [
+    "Standup collector runs successfully on all three machines",
+    "Collector generates valid JSON matching schema",
+    "API successfully receives and stores standup data",
+    "API returns correct data for date queries",
+    "Dashboard displays current day's standups for all machines",
+    "Dashboard date picker allows browsing historical standups",
+    "Highlights and blockers are visually distinct",
+    "Dashboard is responsive on mobile and desktop",
+    "Cron jobs trigger automatically at 11:59 PM",
+    "Error handling works (API down, network issues)"
+  ],
+
+  "successMetrics": [
+    "All three machines submit standup summaries daily",
+    "Dashboard loads in < 2 seconds",
+    "Historical data is accessible and accurate",
+    "Zero manual intervention required for daily operation",
+    "Team members check dashboard regularly for progress visibility"
+  ],
+
+  "futureEnhancements": [
+    "Slack/Discord integration for daily digest",
+    "Weekly summary rollup",
+    "Trend analysis (commits per week, message patterns)",
+    "AI-generated insights from activity patterns",
+    "Integration with voting system (show active votes)",
+    "Real-time updates via WebSockets",
+    "Export to PDF or JSON",
+    "Customizable highlight/blocker keywords"
+  ],
+
+  "deployment": {
+    "standupCollector": {
+      "location": "Each machine: /Users/{user}/pinkyandbrain/standup-collector.sh",
+      "installation": [
+        "1. Copy standup-collector.sh to ~/pinkyandbrain/",
+        "2. chmod +x standup-collector.sh",
+        "3. Create .env with API_SECRET",
+        "4. Test: ./standup-collector.sh",
+        "5. Add to crontab: crontab -e",
+        "6. Add line: 59 23 * * * cd ~/pinkyandbrain && ./standup-collector.sh >> logs/standup-collector.log 2>&1"
+      ]
+    },
+    "apiWorker": {
+      "location": "Cloudflare Workers: pinky-brain-hub.b-9f2.workers.dev",
+      "deployment": [
+        "1. cd workers/standup-api",
+        "2. npm install",
+        "3. Create KV namespace: wrangler kv:namespace create STANDUP_STORE",
+        "4. Update wrangler.toml with KV binding",
+        "5. Deploy: wrangler deploy",
+        "6. Test endpoints with curl"
+      ]
+    },
+    "dashboard": {
+      "location": "Cloudflare Pages: standup-dashboard.pages.dev",
+      "deployment": [
+        "1. cd dashboard/standup-dashboard",
+        "2. Test locally: python3 -m http.server 8000",
+        "3. Create Cloudflare Pages project",
+        "4. Connect to GitHub or direct upload",
+        "5. Deploy: wrangler pages deploy ./",
+        "6. Access: https://standup-dashboard.pages.dev"
+      ]
+    }
+  },
+
+  "documentation": {
+    "files": [
+      "docs/STANDUP-DASHBOARD.md - User guide and architecture",
+      "workers/standup-api/README.md - API documentation",
+      "dashboard/standup-dashboard/README.md - Dashboard docs"
+    ],
+    "topics": [
+      "How to read the dashboard",
+      "How to customize standup collector",
+      "API endpoint documentation",
+      "Troubleshooting guide",
+      "Adding new data fields"
+    ]
+  },
+
+  "estimatedEffort": {
+    "phase1": "2-3 hours - Standup collector script",
+    "phase2": "3-4 hours - API worker implementation",
+    "phase3": "4-5 hours - Dashboard UI",
+    "phase4": "1-2 hours - Integration and testing",
+    "total": "10-14 hours of development time"
+  },
+
+  "dependencies": [
+    "git (already installed)",
+    "jq (for JSON processing in bash)",
+    "curl (already installed)",
+    "Node.js & npm (for worker development)",
+    "Wrangler CLI (for Cloudflare deployment)",
+    "Cloudflare account with Workers & Pages enabled"
+  ],
+
+  "notes": [
+    "Start with phase 1 (collector) to begin gathering data immediately",
+    "Phases 2 and 3 can be developed in parallel after phase 1",
+    "Test collector manually before setting up cron jobs",
+    "Consider storing raw data for 90 days, aggregated summaries indefinitely",
+    "Dashboard should gracefully handle missing data (machines that didn't submit)",
+    "Include timezone handling (all machines may not be in same timezone)"
+  ]
+}
